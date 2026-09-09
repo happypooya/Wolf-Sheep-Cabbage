@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wolf, Sheep & Cabbage River Puzzle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .wave-bg {
+            background: linear-gradient(180deg, #4fa8d1 0%, #2b7da3 60%, #1d5f80 100%);
+        }
+
+        .interactive-element {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+            cursor: pointer;
+        }
+
+        .interactive-element:hover {
+            transform: scale(1.08) translateY(-4px);
+            filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.3));
+        }
+
+        .interactive-element:active {
+            transform: scale(0.95);
+        }
+
+        .go-btn {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff5252 100%);
+            box-shadow: 0 6px 0 #c0392b, 0 10px 15px rgba(0,0,0,0.3);
+            transition: all 0.15s ease;
+        }
+
+        .go-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #c0392b, 0 12px 20px rgba(0,0,0,0.35);
+        }
+
+        .go-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #c0392b, 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .go-btn:disabled {
+            background: #a4b0be;
+            box-shadow: 0 4px 0 #747d8c;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        @keyframes floatWave {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-4px) rotate(-1deg); }
+        }
+
+        .floating-boat {
+            animation: floatWave 2.8s ease-in-out infinite;
+        }
+
+        @keyframes bobItem {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .bobbing {
+            animation: bobItem 2s ease-in-out infinite;
+        }
+
+        .modal-enter {
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.7) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Classic sign post styling */
+        .classic-sign {
+            background: #d97706;
+            border: 4px solid #78350f;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Top Header Bar -->
+    <header class="bg-slate-800 border-b border-slate-700 text-white px-4 py-3 shadow-md z-20">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-900 p-2 rounded-xl text-xl font-black shadow-inner flex items-center justify-center w-10 h-10">
+                    <i class="fa-solid fa-ship"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide text-amber-400">Wolf, Sheep & Cabbage River Game</h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Cross the river without leaving predator and prey together!</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="rulesBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-amber-400"></i>
+                    <span>Rules</span>
+                </button>
+                <button id="soundToggleBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2 rounded-lg text-sm transition">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-emerald-400"></i>
+                </button>
+                <button id="restartBtn" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-2 sm:p-4 flex flex-col justify-center">
+        
+        <!-- Action Control Dock (Top center panel matching classic Flash riddle game style) -->
+        <div class="bg-slate-800/95 backdrop-blur-md rounded-2xl p-3 mb-3 border border-slate-700/80 shadow-2xl max-w-3xl mx-auto w-full flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- GO! Button with directional indicator -->
+            <button id="goBtn" class="go-btn text-white font-black text-lg sm:text-xl py-3 px-5 sm:px-7 rounded-2xl flex items-center gap-2 border-2 border-amber-300/30">
+                <i id="goArrowLeft" class="fa-solid fa-arrow-left text-amber-200 hidden"></i>
+                <span id="goBtnText">GO!</span>
+                <i id="goArrowRight" class="fa-solid fa-arrow-right text-amber-200"></i>
+            </button>
+
+            <!-- Disembark / Unload Button -->
+            <button id="disembarkBtn" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold py-2.5 px-3 sm:px-4 rounded-xl border border-indigo-400/40 shadow flex items-center gap-2 transition">
+                <i class="fa-solid fa-box-open text-amber-300"></i>
+                <span id="disembarkBtnText">Disembark Cargo</span>
+            </button>
+
+            <!-- Selection Slots Indicator / Boat Status -->
+            <div class="flex-1 flex items-center justify-end gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700/60 min-w-[240px]">
+                <div class="text-right hidden md:block mr-2">
+                    <div id="boatStatusText" class="text-xs uppercase tracking-wider text-amber-400 font-bold">Boat Moored Right</div>
+                    <div id="boatCargoText" class="text-xs text-slate-300">Click item to load/unload</div>
+                </div>
+
+                <!-- Entity Dock Item Selector Buttons -->
+                <div class="flex gap-2">
+                    <!-- Cabbage Slot -->
+                    <button id="dock-cabbage" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-emerald-950/80 border-2 border-emerald-500/50 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Cabbage">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <circle cx="50" cy="50" r="38" fill="#4ade80" />
+                            <circle cx="35" cy="45" r="22" fill="#22c55e" opacity="0.8" />
+                            <circle cx="65" cy="45" r="22" fill="#22c55e" opacity="0.8" />
+                            <circle cx="50" cy="60" r="25" fill="#16a34a" opacity="0.9" />
+                            <circle cx="50" cy="50" r="18" fill="#86efac" />
+                        </svg>
+                        <span id="dock-cabbage-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">1</span>
+                    </button>
+
+                    <!-- Sheep Slot -->
+                    <button id="dock-sheep" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-800 border-2 border-slate-400/50 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Sheep">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <ellipse cx="50" cy="55" rx="32" ry="25" fill="#f8fafc" />
+                            <circle cx="35" cy="45" r="16" fill="#f1f5f9" />
+                            <circle cx="65" cy="45" r="16" fill="#f1f5f9" />
+                            <circle cx="50" cy="40" r="18" fill="#ffffff" />
+                            <ellipse cx="68" cy="52" rx="10" ry="14" fill="#334155" />
+                            <circle cx="72" cy="48" r="2.5" fill="#ffffff" />
+                        </svg>
+                        <span id="dock-sheep-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">2</span>
+                    </button>
+
+                    <!-- Redesigned Sleek Wolf Slot -->
+                    <button id="dock-wolf" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900 border-2 border-amber-500/60 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Wolf">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <path d="M 20,70 L 30,50 L 25,30 L 40,42 L 50,20 L 60,42 L 75,30 L 70,50 L 80,70 L 65,85 L 35,85 Z" fill="#475569" stroke="#1e293b" stroke-width="3"/>
+                            <polygon points="28,34 38,44 32,48" fill="#f43f5e" />
+                            <polygon points="72,34 62,44 68,48" fill="#f43f5e" />
+                            <path d="M 38,55 L 50,75 L 62,55 Z" fill="#334155"/>
+                            <ellipse cx="50" cy="72" rx="6" ry="4" fill="#0f172a"/>
+                            <ellipse cx="38" cy="48" rx="5" ry="6" fill="#fbbf24"/>
+                            <ellipse cx="62" cy="48" rx="5" ry="6" fill="#fbbf24"/>
+                            <circle cx="39" cy="48" r="2.5" fill="#000000"/>
+                            <circle cx="61" cy="48" r="2.5" fill="#000000"/>
+                        </svg>
+                        <span id="dock-wolf-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">3</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- River Viewport Box -->
+        <div id="gameScene" class="relative w-full aspect-[16/9] max-h-[550px] min-h-[380px] rounded-3xl overflow-hidden border-4 border-slate-700 shadow-2xl flex flex-col justify-between wave-bg">
+            
+            <!-- Sky & Background Details -->
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute top-4 left-10 text-white/40 text-4xl floating-boat" style="animation-duration: 6s;">
+                    <i class="fa-solid fa-cloud"></i>
+                </div>
+                <div class="absolute top-8 right-1/4 text-white/30 text-5xl floating-boat" style="animation-duration: 8s; animation-delay: 1s;">
+                    <i class="fa-solid fa-cloud"></i>
+                </div>
+                <div class="absolute top-3 right-12 text-white/35 text-3xl floating-boat" style="animation-duration: 7s; animation-delay: 2s;">
+                    <i class="fa-solid fa-cloud"></i>
+                </div>
+
+                <!-- Sun -->
+                <div class="absolute top-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-amber-300/80 blur-md"></div>
+                <div class="absolute top-8 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-amber-200"></div>
+
+                <!-- Water ripples -->
+                <div class="absolute bottom-12 left-1/3 text-cyan-200/40 text-2xl">~~~</div>
+                <div class="absolute bottom-24 right-1/3 text-cyan-200/40 text-2xl">~~~</div>
+                <div class="absolute bottom-8 left-1/2 text-cyan-200/30 text-xl">~~~</div>
+            </div>
+
+            <!-- River Stage Container -->
+            <div class="relative w-full h-full flex justify-between items-end z-10 p-0">
+                
+                <!-- Left Shore (Destination Bank) -->
+                <div id="leftShore" class="relative w-[30%] h-[72%] bg-amber-900 border-t-8 border-r-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-2 pt-4 transition-all">
+                    <!-- Grass Top Layer -->
+                    <div class="absolute -top-3 left-0 right-0 h-4 bg-emerald-500 rounded-t-lg"></div>
+
+                    <!-- Dock Indicator Light on Shore -->
+                    <div id="leftDockLight" class="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-700">
+                        <span id="leftDockDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                        <span id="leftDockLabel" class="text-[10px] text-slate-400 uppercase font-bold">Destination Bank</span>
+                    </div>
+
+                    <!-- Left Bank Item Slots Container -->
+                    <div id="leftBankZone" class="w-full flex-1 flex flex-wrap gap-2 justify-center items-center p-2 mt-4">
+                        <!-- Entities dynamically placed here -->
+                    </div>
+                </div>
+
+                <!-- Middle River Area -->
+                <div class="relative flex-1 h-full flex items-end justify-center pb-2 overflow-hidden">
+                    
+                    <!-- Boat Track Area -->
+                    <div id="boatContainer" class="absolute bottom-3 w-[190px] sm:w-[230px] h-[125px] transition-all duration-700 ease-in-out floating-boat" style="left: calc(100% - 220px);">
+                        
+                        <!-- Boat Graphic & Interactive Passenger Zone -->
+                        <div class="relative w-full h-full">
+
+                            <!-- Visual Mooring Rope (Shows active shore connection) -->
+                            <div id="mooringRopeLeft" class="absolute top-12 -left-6 w-8 h-1 bg-amber-200/80 rounded hidden"></div>
+                            <div id="mooringRopeRight" class="absolute top-12 -right-6 w-8 h-1 bg-amber-200/80 rounded"></div>
+
+                            <!-- Cargo Slot in Boat (Clicking cargo disembarks it onto current docked bank) -->
+                            <div id="boatCargoZone" class="absolute bottom-11 right-6 w-16 h-16 flex items-center justify-center z-20 cursor-pointer" title="Click to Unload Cargo onto current shore">
+                                <!-- Passenger element goes here -->
+                            </div>
+
+                            <!-- Farmer Figure in Boat -->
+                            <div class="absolute bottom-10 left-6 z-10 flex flex-col items-center">
+                                <div class="w-8 h-8 rounded-full bg-amber-200 border-2 border-amber-700 relative flex items-center justify-center">
+                                    <div class="absolute -top-2 w-10 h-3 bg-amber-600 rounded-full border border-amber-800"></div>
+                                    <div class="w-1 h-1 bg-slate-800 rounded-full mr-2"></div>
+                                    <div class="w-1 h-1 bg-slate-800 rounded-full"></div>
+                                </div>
+                                <div class="w-10 h-10 bg-blue-600 rounded-t-lg border-x-2 border-t-2 border-blue-800 relative">
+                                    <div id="oar" class="absolute top-3 -left-4 w-12 h-2 bg-amber-800 rounded origin-right transform -rotate-12 transition-transform duration-300"></div>
+                                </div>
+                            </div>
+
+                            <!-- Wooden Boat Hull -->
+                            <svg viewBox="0 0 200 70" class="w-full h-full drop-shadow-xl">
+                                <path d="M 10 20 Q 20 60 50 65 L 160 65 Q 190 60 195 20 L 175 20 Q 150 50 50 50 L 25 20 Z" fill="#854d0e" stroke="#451a03" stroke-width="3" />
+                                <path d="M 20 28 L 180 28" stroke="#a16207" stroke-width="2" stroke-dasharray="4 2" />
+                                <ellipse cx="100" cy="66" rx="80" ry="6" fill="#38bdf8" opacity="0.5" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Shore (Start Bank) -->
+                <div id="rightShore" class="relative w-[30%] h-[72%] bg-amber-900 border-t-8 border-l-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-2 pt-4 transition-all">
+                    <!-- Grass Top Layer -->
+                    <div class="absolute -top-3 left-0 right-0 h-4 bg-emerald-500 rounded-t-lg"></div>
+
+                    <!-- Dock Indicator Light on Shore -->
+                    <div id="rightDockLight" class="absolute top-2 left-2 flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-700">
+                        <span id="rightDockDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span id="rightDockLabel" class="text-[10px] text-amber-300 uppercase font-bold">Start Bank (Docked)</span>
+                    </div>
+
+                    <!-- Right Bank Item Slots Container -->
+                    <div id="rightBankZone" class="w-full flex-1 flex flex-wrap gap-2 justify-center items-center p-2 mt-4">
+                        <!-- Entities dynamically placed here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Status Footer -->
+            <div class="bg-slate-900/90 text-slate-300 px-4 py-2 text-xs flex justify-between items-center border-t border-slate-700/80 z-20">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="moveCounterText" class="font-bold text-slate-200">Moves: 0</span>
+                </div>
+                <div id="hintMessage" class="text-amber-300 font-medium truncate max-w-[60%] text-center">
+                    Objective: Move Wolf, Sheep & Cabbage to Destination Bank.
+                </div>
+                <div>
+                    <button id="helpBtn" class="hover:text-amber-400 underline transition">How to play?</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-500 py-2 text-center text-xs">
+        Wolf, Sheep & Cabbage River Crossing Game
+    </footer>
+
+    <!-- Entity Templates -->
+    <template id="tpl-cabbage">
+        <div data-id="cabbage" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Cabbage">
+            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="20" y="45" width="60" height="40" rx="4" fill="#a16207" stroke="#451a03" stroke-width="3"/>
+                <line x1="20" y1="58" x2="80" y2="58" stroke="#451a03" stroke-width="2"/>
+                <line x1="20" y1="71" x2="80" y2="71" stroke="#451a03" stroke-width="2"/>
+                <circle cx="35" cy="40" r="14" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+                <circle cx="65" cy="40" r="14" fill="#22c55e" stroke="#166534" stroke-width="2"/>
+                <circle cx="50" cy="32" r="16" fill="#86efac" stroke="#166534" stroke-width="2"/>
+            </svg>
+            <span class="bg-slate-900/80 text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Cabbage</span>
+        </div>
+    </template>
+
+    <template id="tpl-sheep">
+        <div data-id="sheep" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Sheep">
+            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md bobbing">
+                <circle cx="40" cy="50" r="22" fill="#ffffff" />
+                <circle cx="60" cy="50" r="22" fill="#ffffff" />
+                <circle cx="50" cy="38" r="20" fill="#ffffff" />
+                <circle cx="50" cy="60" r="20" fill="#f8fafc" />
+                <rect x="35" y="68" width="6" height="18" rx="3" fill="#334155" />
+                <rect x="58" y="68" width="6" height="18" rx="3" fill="#334155" />
+                <ellipse cx="68" cy="45" rx="14" ry="18" fill="#475569" />
+                <circle cx="72" cy="40" r="3" fill="#ffffff" />
+                <circle cx="73" cy="40" r="1.5" fill="#000000" />
+                <ellipse cx="60" cy="36" rx="8" ry="4" fill="#334155" transform="rotate(-20 60 36)"/>
+            </svg>
+            <span class="bg-slate-900/80 text-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Sheep</span>
+        </div>
+    </template>
+
+    <template id="tpl-wolf">
+        <div data-id="wolf" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Wolf">
+            <!-- Polished Redesigned Wolf Vector -->
+            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <path d="M 15,75 L 28,48 L 20,25 L 42,38 L 50,15 L 58,38 L 80,25 L 72,48 L 85,75 L 68,90 L 32,90 Z" fill="#475569" stroke="#1e293b" stroke-width="3"/>
+                <polygon points="26,30 38,42 30,46" fill="#f43f5e" />
+                <polygon points="74,30 62,42 70,46" fill="#f43f5e" />
+                <path d="M 36,55 L 50,78 L 64,55 Z" fill="#1e293b"/>
+                <ellipse cx="50" cy="74" rx="7" ry="5" fill="#0f172a"/>
+                <ellipse cx="36" cy="48" rx="6" ry="7" fill="#fbbf24"/>
+                <ellipse cx="64" cy="48" rx="6" ry="7" fill="#fbbf24"/>
+                <circle cx="37" cy="48" r="3" fill="#000000"/>
+                <circle cx="63" cy="48" r="3" fill="#000000"/>
+                <polygon points="43,78 46,85 49,78" fill="#ffffff" />
+                <polygon points="51,78 54,85 57,78" fill="#ffffff" />
+            </svg>
+            <span class="bg-slate-900/80 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Wolf</span>
+        </div>
+    </template>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 max-w-lg w-full rounded-2xl p-6 shadow-2xl modal-enter">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <h3 class="text-xl font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-scroll"></i>
+                    River Crossing Rules
+                </h3>
+                <button id="closeRulesBtn" class="text-slate-400 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                <p class="font-medium text-slate-200">
+                    Help the farmer move the <span class="text-amber-400 font-bold">Wolf</span>, the <span class="text-slate-100 font-bold">Sheep</span>, and the <span class="text-emerald-400 font-bold">Cabbage</span> from the Start Bank to the Destination Bank!
+                </p>
+                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/60 space-y-2">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-ship text-amber-400 mt-1"></i>
+                        <span>The boat carries the <strong>Farmer</strong> and up to <strong>ONE</strong> item.</span>
+                    </div>
+                    <div class="flex items-start gap-2 text-rose-300">
+                        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                        <span>When left alone on either bank without the farmer:</span>
+                    </div>
+                    <ul class="list-disc list-inside pl-6 space-y-1 text-slate-300">
+                        <li>The <strong class="text-amber-400">Wolf</strong> will eat the <strong class="text-slate-100">Sheep</strong>!</li>
+                        <li>The <strong class="text-slate-100">Sheep</strong> will eat the <strong class="text-emerald-400">Cabbage</strong>!</li>
+                    </ul>
+                </div>
+
+                <!-- Accordion Solution Hint -->
+                <details class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 text-xs">
+                    <summary class="font-bold text-amber-300 cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                        <span>Need a hint? Click for step-by-step solution</span>
+                    </summary>
+                    <ol class="list-decimal list-inside space-y-1 mt-2 text-slate-300 pl-1">
+                        <li>Cross with <strong>Sheep</strong> to Destination $\rightarrow$ Return alone</li>
+                        <li>Cross with <strong>Wolf</strong> $\rightarrow$ Bring <strong>Sheep back</strong> to Start!</li>
+                        <li>Cross with <strong>Cabbage</strong> to Destination $\rightarrow$ Return alone</li>
+                        <li>Cross with <strong>Sheep</strong> to Destination $\rightarrow$ Win!</li>
+                    </ol>
+                </details>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button id="understandBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Defeat Modal -->
+    <div id="defeatModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border-2 border-rose-500/60 text-slate-100 max-w-md w-full rounded-2xl p-6 shadow-2xl modal-enter text-center">
+            <div class="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-3 border border-rose-500/40">
+                <i class="fa-solid fa-skull-crossbones"></i>
+            </div>
+            
+            <h3 class="text-2xl font-black text-rose-400 mb-2">Oh No! Disaster Struck!</h3>
+            <p id="defeatReasonText" class="text-slate-300 text-sm mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                The wolf ate the sheep!
+            </p>
+
+            <button id="tryAgainBtn" class="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg transition">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Try Again
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Modal (Includes requested clue "the first number is 9") -->
+    <div id="victoryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border-2 border-emerald-500/80 text-slate-100 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl modal-enter text-center relative overflow-hidden">
+            <div class="absolute -top-20 -left-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border-2 border-emerald-400/40 shadow-inner">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h3 class="text-3xl font-black text-emerald-400 mb-1">Puzzle Solved!</h3>
+            <p class="text-slate-300 text-sm mb-5">You safely transported all three across the river!</p>
+
+            <!-- Prominent requested clue message -->
+            <div class="bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 border-2 border-amber-400/80 p-4 rounded-2xl mb-6 shadow-xl">
+                <div class="text-xs uppercase tracking-widest text-amber-300 font-bold mb-1">
+                    <i class="fa-solid fa-key mr-1"></i> Secret Clue Unlocked
+                </div>
+                <div class="text-xl sm:text-2xl font-black text-white tracking-wide">
+                    The first number is <span class="text-amber-400 text-3xl font-black underline decoration-amber-400">9</span>.
+                </div>
+            </div>
+
+            <div id="victoryStats" class="text-xs text-slate-400 mb-6 flex justify-around bg-slate-800/80 py-2 rounded-xl border border-slate-700">
+                <div>Total Moves: <span id="finalMoveCount" class="font-bold text-slate-200">7</span></div>
+                <div>Status: <span class="font-bold text-emerald-400">Perfect Crossing</span></div>
+            </div>
+
+            <button id="playAgainBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black py-3.5 px-6 rounded-xl shadow-lg transition text-lg tracking-wide">
+                <i class="fa-solid fa-play mr-2"></i> Play Again
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Logic -->
+    <script>
+        const state = {
+            farmer: 'right',   // 'left' or 'right'
+            wolf: 'right',     // 'left', 'right', or 'boat'
+            sheep: 'right',    // 'left', 'right', or 'boat'
+            cabbage: 'right',  // 'left', 'right', or 'boat'
+            boatSide: 'right', // 'left' or 'right'
+            moves: 0,
+            isAnimating: false,
+            soundEnabled: true,
+            isGameOver: false
+        };
+
+        // Web Audio Synthesizer
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const now = audioCtx.currentTime;
+                
+                if (type === 'click') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, now);
+                    osc.frequency.exponentialRampToValueAtTime(850, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } 
+                else if (type === 'splash') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.45);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                }
+                else if (type === 'fail') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.5);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+                else if (type === 'win') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.12);
+                        osc.stop(now + idx * 0.12 + 0.4);
+                    });
+                }
+            } catch (e) {
+                console.error("Audio error", e);
+            }
+        }
+
+        // DOM References
+        const leftBankZone = document.getElementById('leftBankZone');
+        const rightBankZone = document.getElementById('rightBankZone');
+        const boatCargoZone = document.getElementById('boatCargoZone');
+        const boatContainer = document.getElementById('boatContainer');
+        const goBtn = document.getElementById('goBtn');
+        const goBtnText = document.getElementById('goBtnText');
+        const goArrowLeft = document.getElementById('goArrowLeft');
+        const goArrowRight = document.getElementById('goArrowRight');
+        const disembarkBtn = document.getElementById('disembarkBtn');
+        const disembarkBtnText = document.getElementById('disembarkBtnText');
+
+        const leftDockDot = document.getElementById('leftDockDot');
+        const leftDockLabel = document.getElementById('leftDockLabel');
+        const rightDockDot = document.getElementById('rightDockDot');
+        const rightDockLabel = document.getElementById('rightDockLabel');
+        const mooringRopeLeft = document.getElementById('mooringRopeLeft');
+        const mooringRopeRight = document.getElementById('mooringRopeRight');
+
+        const moveCounterText = document.getElementById('moveCounterText');
+        const boatStatusText = document.getElementById('boatStatusText');
+        const boatCargoText = document.getElementById('boatCargoText');
+        const hintMessage = document.getElementById('hintMessage');
+        const oar = document.getElementById('oar');
+
+        // Modals
+        const rulesModal = document.getElementById('rulesModal');
+        const defeatModal = document.getElementById('defeatModal');
+        const victoryModal = document.getElementById('victoryModal');
+        const defeatReasonText = document.getElementById('defeatReasonText');
+
+        // Dock Template References
+        const tplCabbage = document.getElementById('tpl-cabbage');
+        const tplSheep = document.getElementById('tpl-sheep');
+        const tplWolf = document.getElementById('tpl-wolf');
+
+        function getItemInBoat() {
+            if (state.wolf === 'boat') return 'wolf';
+            if (state.sheep === 'boat') return 'sheep';
+            if (state.cabbage === 'boat') return 'cabbage';
+            return null;
+        }
+
+        function createEntityDOM(id) {
+            let template = null;
+            if (id === 'cabbage') template = tplCabbage;
+            if (id === 'sheep') template = tplSheep;
+            if (id === 'wolf') template = tplWolf;
+
+            const clone = template.content.cloneNode(true);
+            const el = clone.querySelector('.game-entity');
+            
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleEntityClick(id);
+            });
+
+            return el;
+        }
+
+        function handleEntityClick(id) {
+            if (state.isAnimating || state.isGameOver) return;
+
+            const currentLocation = state[id];
+
+            // Item is currently on bank
+            if (currentLocation === 'left' || currentLocation === 'right') {
+                if (currentLocation !== state.boatSide) {
+                    showHint(`Boat is currently docked at the ${state.boatSide.toUpperCase()} Bank! Move the boat first or select an item on the ${state.boatSide.toUpperCase()} Bank.`, true);
+                    return;
+                }
+
+                const cargo = getItemInBoat();
+                if (cargo) {
+                    showHint("Boat can only carry 1 item at a time! Click 'Disembark' or click the boat cargo to unload it first.", true);
+                    return;
+                }
+
+                state[id] = 'boat';
+                playSound('click');
+                updateUI();
+                showHint(`Loaded ${id.toUpperCase()} into the boat.`);
+            } 
+            // Item is currently in boat -> Unload onto CURRENT docked side
+            else if (currentLocation === 'boat') {
+                state[id] = state.boatSide;
+                playSound('click');
+                updateUI();
+                showHint(`Disembarked ${id.toUpperCase()} onto the ${state.boatSide.toUpperCase()} Bank.`);
+            }
+        }
+
+        function disembarkCurrentCargo() {
+            if (state.isAnimating || state.isGameOver) return;
+
+            const cargo = getItemInBoat();
+            if (!cargo) {
+                showHint("No item currently in the boat to disembark!", true);
+                return;
+            }
+
+            // Always unloads unambiguously onto the shore where boat is docked
+            state[cargo] = state.boatSide;
+            playSound('click');
+            updateUI();
+            showHint(`Unloaded ${cargo.toUpperCase()} onto the ${state.boatSide.toUpperCase()} Bank.`);
+            
+            // Check win condition immediately on disembarking
+            checkGameState();
+        }
+
+        function updateUI() {
+            leftBankZone.innerHTML = '';
+            rightBankZone.innerHTML = '';
+            boatCargoZone.innerHTML = '';
+
+            const entities = ['cabbage', 'sheep', 'wolf'];
+
+            entities.forEach(id => {
+                const loc = state[id];
+                const domEl = createEntityDOM(id);
+
+                if (loc === 'left') {
+                    leftBankZone.appendChild(domEl);
+                } else if (loc === 'right') {
+                    rightBankZone.appendChild(domEl);
+                } else if (loc === 'boat') {
+                    boatCargoZone.appendChild(domEl);
+                }
+            });
+
+            // Precise docking positioning right against shore walls
+            if (state.boatSide === 'left') {
+                boatContainer.style.left = '0%';
+                
+                // Dock indicator lights
+                leftDockDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+                leftDockLabel.className = "text-[10px] text-emerald-300 uppercase font-bold";
+                leftDockLabel.innerText = "Destination Bank (Docked)";
+
+                rightDockDot.className = "w-2.5 h-2.5 rounded-full bg-slate-600";
+                rightDockLabel.className = "text-[10px] text-slate-400 uppercase font-bold";
+                rightDockLabel.innerText = "Start Bank";
+
+                mooringRopeLeft.classList.remove('hidden');
+                mooringRopeRight.classList.add('hidden');
+
+                // Movement direction button indicator
+                goArrowLeft.classList.add('hidden');
+                goArrowRight.classList.remove('hidden');
+                goBtnText.innerText = "CROSS RIGHT";
+            } else {
+                boatContainer.style.left = 'calc(100% - 190px)';
+                if (window.innerWidth >= 640) {
+                    boatContainer.style.left = 'calc(100% - 230px)';
+                }
+
+                leftDockDot.className = "w-2.5 h-2.5 rounded-full bg-slate-600";
+                leftDockLabel.className = "text-[10px] text-slate-400 uppercase font-bold";
+                leftDockLabel.innerText = "Destination Bank";
+
+                rightDockDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+                rightDockLabel.className = "text-[10px] text-amber-300 uppercase font-bold";
+                rightDockLabel.innerText = "Start Bank (Docked)";
+
+                mooringRopeLeft.classList.add('hidden');
+                mooringRopeRight.classList.remove('hidden');
+
+                goArrowLeft.classList.remove('hidden');
+                goArrowRight.classList.add('hidden');
+                goBtnText.innerText = "CROSS LEFT";
+            }
+
+            // Update Dock Selectors
+            updateDockSelectors();
+
+            // Move Counter
+            moveCounterText.innerText = `Moves: ${state.moves}`;
+
+            // Status bar & disembark button state
+            const cargo = getItemInBoat();
+            if (cargo) {
+                boatStatusText.innerText = `Boat Loaded (${state.boatSide.toUpperCase()})`;
+                boatCargoText.innerText = `Carrying: ${cargo.toUpperCase()}`;
+                disembarkBtn.disabled = false;
+                disembarkBtnText.innerText = `Unload ${cargo.toUpperCase()} to ${state.boatSide.toUpperCase()} Bank`;
+            } else {
+                boatStatusText.innerText = `Boat Moored (${state.boatSide.toUpperCase()})`;
+                boatCargoText.innerText = `Carrying: Farmer only`;
+                disembarkBtn.disabled = true;
+                disembarkBtnText.innerText = `Disembark Cargo`;
+            }
+
+            goBtn.disabled = state.isAnimating || state.isGameOver;
+        }
+
+        function updateDockSelectors() {
+            const entities = ['cabbage', 'sheep', 'wolf'];
+            
+            entities.forEach(id => {
+                const btn = document.getElementById(`dock-${id}`);
+                const badge = document.getElementById(`dock-${id}-badge`);
+                const loc = state[id];
+
+                if (loc === 'left') {
+                    badge.innerText = 'LEFT';
+                    badge.className = "absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-300";
+                    btn.classList.remove('ring-4', 'ring-amber-400');
+                } else if (loc === 'right') {
+                    badge.innerText = 'RIGHT';
+                    badge.className = "absolute -bottom-1 -right-1 bg-amber-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-amber-300";
+                    btn.classList.remove('ring-4', 'ring-amber-400');
+                } else if (loc === 'boat') {
+                    badge.innerText = 'BOAT';
+                    badge.className = "absolute -bottom-1 -right-1 bg-cyan-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white animate-pulse";
+                    btn.classList.add('ring-4', 'ring-amber-400');
+                }
+            });
+        }
+
+        function showHint(msg, isError = false) {
+            hintMessage.innerText = msg;
+            if (isError) {
+                hintMessage.className = "text-rose-300 font-bold truncate max-w-[60%] text-center animate-bounce";
+                setTimeout(() => {
+                    hintMessage.className = "text-amber-300 font-medium truncate max-w-[60%] text-center";
+                }, 2200);
+            } else {
+                hintMessage.className = "text-amber-300 font-medium truncate max-w-[60%] text-center";
+            }
+        }
+
+        function crossRiver() {
+            if (state.isAnimating || state.isGameOver) return;
+
+            state.isAnimating = true;
+            goBtn.disabled = true;
+            disembarkBtn.disabled = true;
+            playSound('splash');
+
+            // Animate oars
+            oar.classList.add('rotate-12');
+            let oarInterval = setInterval(() => {
+                oar.classList.toggle('rotate-12');
+                oar.classList.toggle('-rotate-12');
+            }, 180);
+
+            // Toggle side
+            const targetSide = state.boatSide === 'right' ? 'left' : 'right';
+            state.boatSide = targetSide;
+            state.farmer = targetSide;
+            state.moves++;
+
+            updateUI();
+
+            setTimeout(() => {
+                clearInterval(oarInterval);
+                oar.className = "absolute top-3 -left-4 w-12 h-2 bg-amber-800 rounded origin-right transform -rotate-12 transition-transform duration-300";
+                
+                state.isAnimating = false;
+                checkGameState();
+            }, 750);
+        }
+
+        function checkGameState() {
+            // Treat cargo currently inside the boat as present on the docked side
+            const wolfLoc = state.wolf === 'boat' ? state.boatSide : state.wolf;
+            const sheepLoc = state.sheep === 'boat' ? state.boatSide : state.sheep;
+            const cabbageLoc = state.cabbage === 'boat' ? state.boatSide : state.cabbage;
+
+            // 1. Check Win Condition (Farmer and all 3 items on Left Bank)
+            if (wolfLoc === 'left' && sheepLoc === 'left' && cabbageLoc === 'left' && state.farmer === 'left') {
+                // Auto-disembark any cargo remaining in boat for clean visual state
+                if (state.wolf === 'boat') state.wolf = 'left';
+                if (state.sheep === 'boat') state.sheep = 'left';
+                if (state.cabbage === 'boat') state.cabbage = 'left';
+                updateUI();
+                triggerWin();
+                return;
+            }
+
+            // 2. Check Loss Condition on unmonitored shore
+            const unmonitoredBank = state.farmer === 'left' ? 'right' : 'left';
+
+            // Check items strictly left behind on the unmonitored bank
+            const wolfOnBank = state.wolf === unmonitoredBank;
+            const sheepOnBank = state.sheep === unmonitoredBank;
+            const cabbageOnBank = state.cabbage === unmonitoredBank;
+
+            if (wolfOnBank && sheepOnBank) {
+                triggerLoss(`The Wolf was left alone with the Sheep on the ${unmonitoredBank.toUpperCase()} bank and ate it! 🐺🍖`);
+                return;
+            }
+
+            if (sheepOnBank && cabbageOnBank) {
+                triggerLoss(`The Sheep was left alone with the Cabbage on the ${unmonitoredBank.toUpperCase()} bank and ate it! 🐑🥬`);
+                return;
+            }
+
+            showHint(`Boat safely arrived at the ${state.boatSide.toUpperCase()} bank. Unload or load cargo for the next trip.`);
+            goBtn.disabled = false;
+        }
+
+        function triggerLoss(reason) {
+            state.isGameOver = true;
+            playSound('fail');
+            defeatReasonText.innerText = reason;
+            defeatModal.classList.remove('hidden');
+        }
+
+        function triggerWin() {
+            state.isGameOver = true;
+            playSound('win');
+            document.getElementById('finalMoveCount').innerText = state.moves;
+            victoryModal.classList.remove('hidden');
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 140,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function resetGame() {
+            state.farmer = 'right';
+            state.wolf = 'right';
+            state.sheep = 'right';
+            state.cabbage = 'right';
+            state.boatSide = 'right';
+            state.moves = 0;
+            state.isAnimating = false;
+            state.isGameOver = false;
+
+            defeatModal.classList.add('hidden');
+            victoryModal.classList.add('hidden');
+            rulesModal.classList.add('hidden');
+
+            showHint("Objective: Move Wolf, Sheep & Cabbage to Destination Bank.");
+            updateUI();
+        }
+
+        // Event Listeners
+        goBtn.addEventListener('click', () => crossRiver());
+        disembarkBtn.addEventListener('click', () => disembarkCurrentCargo());
+        boatCargoZone.addEventListener('click', () => disembarkCurrentCargo());
+
+        document.getElementById('dock-cabbage').addEventListener('click', () => handleEntityClick('cabbage'));
+        document.getElementById('dock-sheep').addEventListener('click', () => handleEntityClick('sheep'));
+        document.getElementById('dock-wolf').addEventListener('click', () => handleEntityClick('wolf'));
+
+        // Reset listeners
+        document.getElementById('restartBtn').addEventListener('click', () => resetGame());
+        document.getElementById('tryAgainBtn').addEventListener('click', () => resetGame());
+        document.getElementById('playAgainBtn').addEventListener('click', () => resetGame());
+
+        // Sound Toggle
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        soundToggleBtn.addEventListener('click', () => {
+            state.soundEnabled = !state.soundEnabled;
+            if (state.soundEnabled) {
+                soundIcon.className = "fa-solid fa-volume-high text-emerald-400";
+            } else {
+                soundIcon.className = "fa-solid fa-volume-xmark text-slate-400";
+            }
+        });
+
+        // Rules modal triggers
+        const helpBtn = document.getElementById('helpBtn');
+        const rulesBtn = document.getElementById('rulesBtn');
+        const closeRulesBtn = document.getElementById('closeRulesBtn');
+        const understandBtn = document.getElementById('understandBtn');
+
+        [rulesBtn, helpBtn].forEach(btn => btn.addEventListener('click', () => {
+            rulesModal.classList.remove('hidden');
+        }));
+
+        [closeRulesBtn, understandBtn].forEach(btn => btn.addEventListener('click', () => {
+            rulesModal.classList.add('hidden');
+        }));
+
+        // Keyboard Shortcuts (1: Cabbage, 2: Sheep, 3: Wolf, D: Disembark, Space/Enter: Cross)
+        window.addEventListener('keydown', (e) => {
+            if (state.isGameOver || state.isAnimating) return;
+            
+            if (e.key === '1') handleEntityClick('cabbage');
+            if (e.key === '2') handleEntityClick('sheep');
+            if (e.key === '3') handleEntityClick('wolf');
+            if (e.key.toLowerCase() === 'd') disembarkCurrentCargo();
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                crossRiver();
+            }
+        });
+
+        // Window resize adjustment
+        window.addEventListener('resize', () => {
+            updateUI();
+        });
+
+        // Initialize
+        window.onload = function() {
+            resetGame();
+        };
+    </script>
+</body>
+</html>
