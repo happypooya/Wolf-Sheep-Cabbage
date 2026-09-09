@@ -14,6 +14,49 @@
             font-family: 'Fredoka', sans-serif;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .wave-bg {
+            background: linear-gradient(180deg, #4fa8d1 0%, #2b7da3 60%, #1d5f80 100%);
+        }
+
+        .interactive-element {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .interactive-element:hover {
+            transform: scale(1.08) translateY(-4px);
+            filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.3));
+        }
+
+        .interactive-element:active {
+            transform: scale(0.92);
+        }
+
+        .go-btn {
+            background: linear-gradient(135deg, #ff9f43 0%, #ff5252 100%);
+            box-shadow: 0 4px 0 #c0392b, 0 6px 12px rgba(0,0,0,0.3);
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+
+        @media (min-width: 640px) {
+            .go-btn {
+                box-shadow: 0 6px 0 #c0392b, 0 10px 15px rgba(0,0,0,0.3);
+            }
+        }
+
+        .go-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #c0392b, 0 10px 15px rgba(0,0,0,0.35);
+        }
+
+        .go-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #c0392b, 0 3px 6px rgba(0,0,0,0.2);
         }
 
         .wave-bg {
@@ -107,29 +150,29 @@
 <body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden">
 
     <!-- Top Header Bar -->
-    <header class="bg-slate-800 border-b border-slate-700 text-white px-4 py-3 shadow-md z-20">
+    <header class="bg-slate-800 border-b border-slate-700 text-white px-3 py-2 sm:px-4 sm:py-3 shadow-md z-20 sticky top-0">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-amber-500 text-slate-900 p-2 rounded-xl text-xl font-black shadow-inner flex items-center justify-center w-10 h-10">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="bg-amber-500 text-slate-900 p-1.5 sm:p-2 rounded-xl text-lg sm:text-xl font-black shadow-inner flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10">
                     <i class="fa-solid fa-ship"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-wide text-amber-400">Wolf, Sheep & Cabbage River Game</h1>
-                    <p class="text-xs text-slate-400 hidden sm:block">Cross the river without leaving predator and prey together!</p>
+                    <h1 class="text-base sm:text-xl font-bold tracking-wide text-amber-400 leading-tight">River Puzzle</h1>
+                    <p class="text-[10px] sm:text-xs text-slate-400 hidden sm:block">Cross the river without leaving predator and prey together!</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button id="rulesBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-3">
+                <button id="rulesBtn" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-circle-question text-amber-400"></i>
                     <span>Rules</span>
                 </button>
-                <button id="soundToggleBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2 rounded-lg text-sm transition">
+                <button id="soundToggleBtn" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm transition">
                     <i id="soundIcon" class="fa-solid fa-volume-high text-emerald-400"></i>
                 </button>
-                <button id="restartBtn" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow">
+                <button id="restartBtn" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow">
                     <i class="fa-solid fa-rotate-right"></i>
-                    <span class="hidden sm:inline">Reset</span>
+                    <span class="hidden xs:inline">Reset</span>
                 </button>
             </div>
         </div>
@@ -138,33 +181,35 @@
     <!-- Main Game Area -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-2 sm:p-4 flex flex-col justify-center">
         
-        <!-- Action Control Dock (Top center panel matching classic Flash riddle game style) -->
-        <div class="bg-slate-800/95 backdrop-blur-md rounded-2xl p-3 mb-3 border border-slate-700/80 shadow-2xl max-w-3xl mx-auto w-full flex flex-wrap items-center justify-between gap-3">
+        <!-- Action Control Dock (Mobile Optimized Flex/Grid Panel) -->
+        <div class="bg-slate-800/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 mb-2 sm:mb-3 border border-slate-700/80 shadow-2xl max-w-3xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
             
-            <!-- GO! Button with directional indicator -->
-            <button id="goBtn" class="go-btn text-white font-black text-lg sm:text-xl py-3 px-5 sm:px-7 rounded-2xl flex items-center gap-2 border-2 border-amber-300/30">
-                <i id="goArrowLeft" class="fa-solid fa-arrow-left text-amber-200 hidden"></i>
-                <span id="goBtnText">GO!</span>
-                <i id="goArrowRight" class="fa-solid fa-arrow-right text-amber-200"></i>
-            </button>
+            <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2">
+                <!-- GO! Button with directional indicator -->
+                <button id="goBtn" class="go-btn text-white font-black text-sm sm:text-xl py-2.5 px-4 sm:py-3 sm:px-7 rounded-xl sm:rounded-2xl flex-1 sm:flex-initial flex items-center justify-center gap-2 border-2 border-amber-300/30">
+                    <i id="goArrowLeft" class="fa-solid fa-arrow-left text-amber-200 hidden"></i>
+                    <span id="goBtnText">GO!</span>
+                    <i id="goArrowRight" class="fa-solid fa-arrow-right text-amber-200"></i>
+                </button>
 
-            <!-- Disembark / Unload Button -->
-            <button id="disembarkBtn" class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold py-2.5 px-3 sm:px-4 rounded-xl border border-indigo-400/40 shadow flex items-center gap-2 transition">
-                <i class="fa-solid fa-box-open text-amber-300"></i>
-                <span id="disembarkBtnText">Disembark Cargo</span>
-            </button>
+                <!-- Disembark / Unload Button -->
+                <button id="disembarkBtn" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold py-2.5 px-3 sm:px-4 rounded-xl border border-indigo-400/40 shadow flex-1 sm:flex-initial flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-box-open text-amber-300"></i>
+                    <span id="disembarkBtnText">Disembark</span>
+                </button>
+            </div>
 
             <!-- Selection Slots Indicator / Boat Status -->
-            <div class="flex-1 flex items-center justify-end gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700/60 min-w-[240px]">
-                <div class="text-right hidden md:block mr-2">
-                    <div id="boatStatusText" class="text-xs uppercase tracking-wider text-amber-400 font-bold">Boat Moored Right</div>
-                    <div id="boatCargoText" class="text-xs text-slate-300">Click item to load/unload</div>
+            <div class="w-full sm:w-auto flex-1 flex items-center justify-between sm:justify-end gap-2 bg-slate-900/80 p-1.5 sm:p-2 rounded-xl border border-slate-700/60">
+                <div class="text-left sm:text-right mr-1">
+                    <div id="boatStatusText" class="text-[10px] sm:text-xs uppercase tracking-wider text-amber-400 font-bold">Moored Right</div>
+                    <div id="boatCargoText" class="text-[10px] sm:text-xs text-slate-300 truncate max-w-[120px] sm:max-w-none">Tap item to load</div>
                 </div>
 
                 <!-- Entity Dock Item Selector Buttons -->
-                <div class="flex gap-2">
+                <div class="flex gap-1.5 sm:gap-2">
                     <!-- Cabbage Slot -->
-                    <button id="dock-cabbage" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-emerald-950/80 border-2 border-emerald-500/50 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Cabbage">
+                    <button id="dock-cabbage" class="dock-slot w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-950/80 border-2 border-emerald-500/50 flex items-center justify-center p-1 relative transition-all active:scale-95" title="Load/Unload Cabbage">
                         <svg viewBox="0 0 100 100" class="w-full h-full">
                             <circle cx="50" cy="50" r="38" fill="#4ade80" />
                             <circle cx="35" cy="45" r="22" fill="#22c55e" opacity="0.8" />
@@ -172,11 +217,11 @@
                             <circle cx="50" cy="60" r="25" fill="#16a34a" opacity="0.9" />
                             <circle cx="50" cy="50" r="18" fill="#86efac" />
                         </svg>
-                        <span id="dock-cabbage-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">1</span>
+                        <span id="dock-cabbage-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[8px] sm:text-[10px] px-1 py-0.5 rounded-full border text-slate-300 font-mono">1</span>
                     </button>
 
                     <!-- Sheep Slot -->
-                    <button id="dock-sheep" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-800 border-2 border-slate-400/50 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Sheep">
+                    <button id="dock-sheep" class="dock-slot w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-800 border-2 border-slate-400/50 flex items-center justify-center p-1 relative transition-all active:scale-95" title="Load/Unload Sheep">
                         <svg viewBox="0 0 100 100" class="w-full h-full">
                             <ellipse cx="50" cy="55" rx="32" ry="25" fill="#f8fafc" />
                             <circle cx="35" cy="45" r="16" fill="#f1f5f9" />
@@ -185,11 +230,11 @@
                             <ellipse cx="68" cy="52" rx="10" ry="14" fill="#334155" />
                             <circle cx="72" cy="48" r="2.5" fill="#ffffff" />
                         </svg>
-                        <span id="dock-sheep-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">2</span>
+                        <span id="dock-sheep-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[8px] sm:text-[10px] px-1 py-0.5 rounded-full border text-slate-300 font-mono">2</span>
                     </button>
 
-                    <!-- Redesigned Sleek Wolf Slot -->
-                    <button id="dock-wolf" class="dock-slot w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900 border-2 border-amber-500/60 flex items-center justify-center p-1 relative transition-all hover:scale-105" title="Load/Unload Wolf">
+                    <!-- Redesigned Wolf Slot -->
+                    <button id="dock-wolf" class="dock-slot w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900 border-2 border-amber-500/60 flex items-center justify-center p-1 relative transition-all active:scale-95" title="Load/Unload Wolf">
                         <svg viewBox="0 0 100 100" class="w-full h-full">
                             <path d="M 20,70 L 30,50 L 25,30 L 40,42 L 50,20 L 60,42 L 75,30 L 70,50 L 80,70 L 65,85 L 35,85 Z" fill="#475569" stroke="#1e293b" stroke-width="3"/>
                             <polygon points="28,34 38,44 32,48" fill="#f43f5e" />
@@ -201,84 +246,79 @@
                             <circle cx="39" cy="48" r="2.5" fill="#000000"/>
                             <circle cx="61" cy="48" r="2.5" fill="#000000"/>
                         </svg>
-                        <span id="dock-wolf-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] px-1.5 py-0.5 rounded-full border text-slate-300 font-mono">3</span>
+                        <span id="dock-wolf-badge" class="absolute -bottom-1 -right-1 bg-slate-800 text-[8px] sm:text-[10px] px-1 py-0.5 rounded-full border text-slate-300 font-mono">3</span>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- River Viewport Box -->
-        <div id="gameScene" class="relative w-full aspect-[16/9] max-h-[550px] min-h-[380px] rounded-3xl overflow-hidden border-4 border-slate-700 shadow-2xl flex flex-col justify-between wave-bg">
+        <div id="gameScene" class="relative w-full aspect-[4/3] xs:aspect-[16/10] sm:aspect-[16/9] max-h-[500px] min-h-[320px] rounded-2xl sm:rounded-3xl overflow-hidden border-2 sm:border-4 border-slate-700 shadow-2xl flex flex-col justify-between wave-bg">
             
             <!-- Sky & Background Details -->
             <div class="absolute inset-0 pointer-events-none">
-                <div class="absolute top-4 left-10 text-white/40 text-4xl floating-boat" style="animation-duration: 6s;">
+                <div class="absolute top-3 left-4 text-white/30 text-2xl sm:text-4xl floating-boat" style="animation-duration: 6s;">
                     <i class="fa-solid fa-cloud"></i>
                 </div>
-                <div class="absolute top-8 right-1/4 text-white/30 text-5xl floating-boat" style="animation-duration: 8s; animation-delay: 1s;">
+                <div class="absolute top-6 right-1/4 text-white/20 text-3xl sm:text-5xl floating-boat" style="animation-duration: 8s; animation-delay: 1s;">
                     <i class="fa-solid fa-cloud"></i>
                 </div>
-                <div class="absolute top-3 right-12 text-white/35 text-3xl floating-boat" style="animation-duration: 7s; animation-delay: 2s;">
+                <div class="absolute top-2 right-6 text-white/25 text-2xl sm:text-3xl floating-boat" style="animation-duration: 7s; animation-delay: 2s;">
                     <i class="fa-solid fa-cloud"></i>
                 </div>
 
                 <!-- Sun -->
-                <div class="absolute top-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-amber-300/80 blur-md"></div>
-                <div class="absolute top-8 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-amber-200"></div>
-
-                <!-- Water ripples -->
-                <div class="absolute bottom-12 left-1/3 text-cyan-200/40 text-2xl">~~~</div>
-                <div class="absolute bottom-24 right-1/3 text-cyan-200/40 text-2xl">~~~</div>
-                <div class="absolute bottom-8 left-1/2 text-cyan-200/30 text-xl">~~~</div>
+                <div class="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-amber-300/80 blur-md"></div>
+                <div class="absolute top-6 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-amber-200"></div>
             </div>
 
             <!-- River Stage Container -->
             <div class="relative w-full h-full flex justify-between items-end z-10 p-0">
                 
                 <!-- Left Shore (Destination Bank) -->
-                <div id="leftShore" class="relative w-[30%] h-[72%] bg-amber-900 border-t-8 border-r-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-2 pt-4 transition-all">
+                <div id="leftShore" class="relative w-[32%] sm:w-[30%] h-[75%] sm:h-[72%] bg-amber-900 border-t-4 sm:border-t-8 border-r-4 sm:border-r-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-1 sm:p-2 pt-3 sm:pt-4 transition-all">
                     <!-- Grass Top Layer -->
-                    <div class="absolute -top-3 left-0 right-0 h-4 bg-emerald-500 rounded-t-lg"></div>
+                    <div class="absolute -top-2 sm:-top-3 left-0 right-0 h-3 sm:h-4 bg-emerald-500 rounded-t-lg"></div>
 
                     <!-- Dock Indicator Light on Shore -->
-                    <div id="leftDockLight" class="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-700">
-                        <span id="leftDockDot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-                        <span id="leftDockLabel" class="text-[10px] text-slate-400 uppercase font-bold">Destination Bank</span>
+                    <div id="leftDockLight" class="absolute top-1.5 sm:top-2 right-1 sm:right-2 flex items-center gap-1 bg-slate-900/90 px-1.5 py-0.5 rounded-full border border-slate-700">
+                        <span id="leftDockDot" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                        <span id="leftDockLabel" class="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold truncate max-w-[70px] sm:max-w-none">Dest</span>
                     </div>
 
                     <!-- Left Bank Item Slots Container -->
-                    <div id="leftBankZone" class="w-full flex-1 flex flex-wrap gap-2 justify-center items-center p-2 mt-4">
+                    <div id="leftBankZone" class="w-full flex-1 flex flex-wrap gap-1 sm:gap-2 justify-center items-center p-1 mt-4 sm:mt-5">
                         <!-- Entities dynamically placed here -->
                     </div>
                 </div>
 
                 <!-- Middle River Area -->
-                <div class="relative flex-1 h-full flex items-end justify-center pb-2 overflow-hidden">
+                <div class="relative flex-1 h-full flex items-end justify-center pb-1 sm:pb-2 overflow-hidden">
                     
                     <!-- Boat Track Area -->
-                    <div id="boatContainer" class="absolute bottom-3 w-[190px] sm:w-[230px] h-[125px] transition-all duration-700 ease-in-out floating-boat" style="left: calc(100% - 220px);">
+                    <div id="boatContainer" class="absolute bottom-2 sm:bottom-3 w-[140px] xs:w-[170px] sm:w-[230px] h-[95px] xs:h-[110px] sm:h-[125px] transition-all duration-700 ease-in-out floating-boat" style="left: calc(100% - 150px);">
                         
                         <!-- Boat Graphic & Interactive Passenger Zone -->
                         <div class="relative w-full h-full">
 
                             <!-- Visual Mooring Rope (Shows active shore connection) -->
-                            <div id="mooringRopeLeft" class="absolute top-12 -left-6 w-8 h-1 bg-amber-200/80 rounded hidden"></div>
-                            <div id="mooringRopeRight" class="absolute top-12 -right-6 w-8 h-1 bg-amber-200/80 rounded"></div>
+                            <div id="mooringRopeLeft" class="absolute top-8 sm:top-12 -left-4 sm:-left-6 w-5 sm:w-8 h-1 bg-amber-200/80 rounded hidden"></div>
+                            <div id="mooringRopeRight" class="absolute top-8 sm:top-12 -right-4 sm:-right-6 w-5 sm:w-8 h-1 bg-amber-200/80 rounded"></div>
 
-                            <!-- Cargo Slot in Boat (Clicking cargo disembarks it onto current docked bank) -->
-                            <div id="boatCargoZone" class="absolute bottom-11 right-6 w-16 h-16 flex items-center justify-center z-20 cursor-pointer" title="Click to Unload Cargo onto current shore">
+                            <!-- Cargo Slot in Boat -->
+                            <div id="boatCargoZone" class="absolute bottom-7 xs:bottom-9 sm:bottom-11 right-3 xs:right-4 sm:right-6 w-11 h-11 xs:w-14 xs:h-14 sm:w-16 sm:h-16 flex items-center justify-center z-20 cursor-pointer active:scale-95" title="Tap to Unload Cargo onto current shore">
                                 <!-- Passenger element goes here -->
                             </div>
 
                             <!-- Farmer Figure in Boat -->
-                            <div class="absolute bottom-10 left-6 z-10 flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full bg-amber-200 border-2 border-amber-700 relative flex items-center justify-center">
-                                    <div class="absolute -top-2 w-10 h-3 bg-amber-600 rounded-full border border-amber-800"></div>
-                                    <div class="w-1 h-1 bg-slate-800 rounded-full mr-2"></div>
+                            <div class="absolute bottom-6 xs:bottom-8 sm:bottom-10 left-3 xs:left-4 sm:left-6 z-10 flex flex-col items-center">
+                                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-amber-200 border border-amber-700 relative flex items-center justify-center">
+                                    <div class="absolute -top-1.5 w-7 sm:w-10 h-2 sm:h-3 bg-amber-600 rounded-full border border-amber-800"></div>
+                                    <div class="w-1 h-1 bg-slate-800 rounded-full mr-1 sm:mr-2"></div>
                                     <div class="w-1 h-1 bg-slate-800 rounded-full"></div>
                                 </div>
-                                <div class="w-10 h-10 bg-blue-600 rounded-t-lg border-x-2 border-t-2 border-blue-800 relative">
-                                    <div id="oar" class="absolute top-3 -left-4 w-12 h-2 bg-amber-800 rounded origin-right transform -rotate-12 transition-transform duration-300"></div>
+                                <div class="w-7 h-7 sm:w-10 sm:h-10 bg-blue-600 rounded-t-lg border-x sm:border-x-2 border-t sm:border-t-2 border-blue-800 relative">
+                                    <div id="oar" class="absolute top-2 sm:top-3 -left-3 sm:-left-4 w-8 sm:w-12 h-1.5 sm:h-2 bg-amber-800 rounded origin-right transform -rotate-12 transition-transform duration-300"></div>
                                 </div>
                             </div>
 
@@ -293,18 +333,18 @@
                 </div>
 
                 <!-- Right Shore (Start Bank) -->
-                <div id="rightShore" class="relative w-[30%] h-[72%] bg-amber-900 border-t-8 border-l-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-2 pt-4 transition-all">
+                <div id="rightShore" class="relative w-[32%] sm:w-[30%] h-[75%] sm:h-[72%] bg-amber-900 border-t-4 sm:border-t-8 border-l-4 sm:border-l-8 border-emerald-600 shadow-2xl flex flex-col justify-start items-center p-1 sm:p-2 pt-3 sm:pt-4 transition-all">
                     <!-- Grass Top Layer -->
-                    <div class="absolute -top-3 left-0 right-0 h-4 bg-emerald-500 rounded-t-lg"></div>
+                    <div class="absolute -top-2 sm:-top-3 left-0 right-0 h-3 sm:h-4 bg-emerald-500 rounded-t-lg"></div>
 
                     <!-- Dock Indicator Light on Shore -->
-                    <div id="rightDockLight" class="absolute top-2 left-2 flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-700">
-                        <span id="rightDockDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                        <span id="rightDockLabel" class="text-[10px] text-amber-300 uppercase font-bold">Start Bank (Docked)</span>
+                    <div id="rightDockLight" class="absolute top-1.5 sm:top-2 left-1 sm:left-2 flex items-center gap-1 bg-slate-900/90 px-1.5 py-0.5 rounded-full border border-slate-700">
+                        <span id="rightDockDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span id="rightDockLabel" class="text-[8px] sm:text-[10px] text-amber-300 uppercase font-bold truncate max-w-[70px] sm:max-w-none">Start</span>
                     </div>
 
                     <!-- Right Bank Item Slots Container -->
-                    <div id="rightBankZone" class="w-full flex-1 flex flex-wrap gap-2 justify-center items-center p-2 mt-4">
+                    <div id="rightBankZone" class="w-full flex-1 flex flex-wrap gap-1 sm:gap-2 justify-center items-center p-1 mt-4 sm:mt-5">
                         <!-- Entities dynamically placed here -->
                     </div>
                 </div>
@@ -312,16 +352,16 @@
             </div>
 
             <!-- Bottom Status Footer -->
-            <div class="bg-slate-900/90 text-slate-300 px-4 py-2 text-xs flex justify-between items-center border-t border-slate-700/80 z-20">
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div class="bg-slate-900/90 text-slate-300 px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs flex justify-between items-center border-t border-slate-700/80 z-20">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span id="moveCounterText" class="font-bold text-slate-200">Moves: 0</span>
                 </div>
-                <div id="hintMessage" class="text-amber-300 font-medium truncate max-w-[60%] text-center">
-                    Objective: Move Wolf, Sheep & Cabbage to Destination Bank.
+                <div id="hintMessage" class="text-amber-300 font-medium truncate max-w-[55%] text-center px-1">
+                    Objective: Move all 3 items to Destination Bank.
                 </div>
                 <div>
-                    <button id="helpBtn" class="hover:text-amber-400 underline transition">How to play?</button>
+                    <button id="helpBtn" class="hover:text-amber-400 active:text-amber-300 underline transition">How to play?</button>
                 </div>
             </div>
 
@@ -335,7 +375,7 @@
 
     <!-- Entity Templates -->
     <template id="tpl-cabbage">
-        <div data-id="cabbage" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Cabbage">
+        <div data-id="cabbage" class="interactive-element game-entity w-12 h-12 xs:w-14 xs:h-14 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Cabbage">
             <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
                 <rect x="20" y="45" width="60" height="40" rx="4" fill="#a16207" stroke="#451a03" stroke-width="3"/>
                 <line x1="20" y1="58" x2="80" y2="58" stroke="#451a03" stroke-width="2"/>
@@ -344,12 +384,12 @@
                 <circle cx="65" cy="40" r="14" fill="#22c55e" stroke="#166534" stroke-width="2"/>
                 <circle cx="50" cy="32" r="16" fill="#86efac" stroke="#166534" stroke-width="2"/>
             </svg>
-            <span class="bg-slate-900/80 text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Cabbage</span>
+            <span class="bg-slate-900/80 text-emerald-300 text-[8px] sm:text-[10px] font-bold px-1 py-0.2 rounded -mt-1 sm:-mt-2 opacity-90">Cabbage</span>
         </div>
     </template>
 
     <template id="tpl-sheep">
-        <div data-id="sheep" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Sheep">
+        <div data-id="sheep" class="interactive-element game-entity w-12 h-12 xs:w-14 xs:h-14 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Sheep">
             <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md bobbing">
                 <circle cx="40" cy="50" r="22" fill="#ffffff" />
                 <circle cx="60" cy="50" r="22" fill="#ffffff" />
@@ -362,13 +402,12 @@
                 <circle cx="73" cy="40" r="1.5" fill="#000000" />
                 <ellipse cx="60" cy="36" rx="8" ry="4" fill="#334155" transform="rotate(-20 60 36)"/>
             </svg>
-            <span class="bg-slate-900/80 text-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Sheep</span>
+            <span class="bg-slate-900/80 text-slate-200 text-[8px] sm:text-[10px] font-bold px-1 py-0.2 rounded -mt-1 sm:-mt-2 opacity-90">Sheep</span>
         </div>
     </template>
 
     <template id="tpl-wolf">
-        <div data-id="wolf" class="interactive-element game-entity w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Wolf">
-            <!-- Polished Redesigned Wolf Vector -->
+        <div data-id="wolf" class="interactive-element game-entity w-12 h-12 xs:w-14 xs:h-14 sm:w-20 sm:h-20 flex flex-col items-center justify-center group relative" title="Wolf">
             <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
                 <path d="M 15,75 L 28,48 L 20,25 L 42,38 L 50,15 L 58,38 L 80,25 L 72,48 L 85,75 L 68,90 L 32,90 Z" fill="#475569" stroke="#1e293b" stroke-width="3"/>
                 <polygon points="26,30 38,42 30,46" fill="#f43f5e" />
@@ -382,43 +421,42 @@
                 <polygon points="43,78 46,85 49,78" fill="#ffffff" />
                 <polygon points="51,78 54,85 57,78" fill="#ffffff" />
             </svg>
-            <span class="bg-slate-900/80 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded -mt-2 opacity-90 group-hover:opacity-100 transition">Wolf</span>
+            <span class="bg-slate-900/80 text-amber-300 text-[8px] sm:text-[10px] font-bold px-1 py-0.2 rounded -mt-1 sm:-mt-2 opacity-90">Wolf</span>
         </div>
     </template>
 
-    <!-- Rules Modal -->
-    <div id="rulesModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-slate-800 border border-slate-700 text-slate-100 max-w-lg w-full rounded-2xl p-6 shadow-2xl modal-enter">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
-                <h3 class="text-xl font-bold text-amber-400 flex items-center gap-2">
+    <!-- Rules Modal (Scrollable on small mobile screens) -->
+    <div id="rulesModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 text-slate-100 max-w-lg w-full rounded-2xl p-4 sm:p-6 shadow-2xl modal-enter max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-3 sm:mb-4">
+                <h3 class="text-lg sm:text-xl font-bold text-amber-400 flex items-center gap-2">
                     <i class="fa-solid fa-scroll"></i>
                     River Crossing Rules
                 </h3>
-                <button id="closeRulesBtn" class="text-slate-400 hover:text-white text-xl">
+                <button id="closeRulesBtn" class="text-slate-400 hover:text-white p-1 text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+            <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 <p class="font-medium text-slate-200">
                     Help the farmer move the <span class="text-amber-400 font-bold">Wolf</span>, the <span class="text-slate-100 font-bold">Sheep</span>, and the <span class="text-emerald-400 font-bold">Cabbage</span> from the Start Bank to the Destination Bank!
                 </p>
-                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700/60 space-y-2">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 space-y-2">
                     <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-ship text-amber-400 mt-1"></i>
+                        <i class="fa-solid fa-ship text-amber-400 mt-0.5"></i>
                         <span>The boat carries the <strong>Farmer</strong> and up to <strong>ONE</strong> item.</span>
                     </div>
                     <div class="flex items-start gap-2 text-rose-300">
-                        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                         <span>When left alone on either bank without the farmer:</span>
                     </div>
-                    <ul class="list-disc list-inside pl-6 space-y-1 text-slate-300">
+                    <ul class="list-disc list-inside pl-4 sm:pl-6 space-y-1 text-slate-300">
                         <li>The <strong class="text-amber-400">Wolf</strong> will eat the <strong class="text-slate-100">Sheep</strong>!</li>
                         <li>The <strong class="text-slate-100">Sheep</strong> will eat the <strong class="text-emerald-400">Cabbage</strong>!</li>
                     </ul>
                 </div>
 
-                <!-- Accordion Solution Hint -->
                 <details class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 text-xs">
                     <summary class="font-bold text-amber-300 cursor-pointer flex items-center gap-2">
                         <i class="fa-solid fa-lightbulb text-amber-400"></i>
@@ -433,8 +471,8 @@
                 </details>
             </div>
 
-            <div class="mt-6 flex justify-end">
-                <button id="understandBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition">
+            <div class="mt-5 flex justify-end">
+                <button id="understandBtn" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold px-4 py-2 rounded-xl transition text-sm">
                     Got it!
                 </button>
             </div>
@@ -715,39 +753,38 @@
                 }
             });
 
-            // Precise docking positioning right against shore walls
+            // Precise docking calculations across mobile & desktop viewports
             if (state.boatSide === 'left') {
                 boatContainer.style.left = '0%';
                 
-                // Dock indicator lights
-                leftDockDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
-                leftDockLabel.className = "text-[10px] text-emerald-300 uppercase font-bold";
-                leftDockLabel.innerText = "Destination Bank (Docked)";
+                leftDockDot.className = "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 animate-ping";
+                leftDockLabel.className = "text-[8px] sm:text-[10px] text-emerald-300 uppercase font-bold truncate";
+                leftDockLabel.innerText = "Dest (Docked)";
 
-                rightDockDot.className = "w-2.5 h-2.5 rounded-full bg-slate-600";
-                rightDockLabel.className = "text-[10px] text-slate-400 uppercase font-bold";
-                rightDockLabel.innerText = "Start Bank";
+                rightDockDot.className = "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-600";
+                rightDockLabel.className = "text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold truncate";
+                rightDockLabel.innerText = "Start";
 
                 mooringRopeLeft.classList.remove('hidden');
                 mooringRopeRight.classList.add('hidden');
 
-                // Movement direction button indicator
                 goArrowLeft.classList.add('hidden');
                 goArrowRight.classList.remove('hidden');
                 goBtnText.innerText = "CROSS RIGHT";
             } else {
-                boatContainer.style.left = 'calc(100% - 190px)';
-                if (window.innerWidth >= 640) {
-                    boatContainer.style.left = 'calc(100% - 230px)';
-                }
+                let boatOffset = 150;
+                if (window.innerWidth >= 640) boatOffset = 230;
+                else if (window.innerWidth >= 400) boatOffset = 170;
 
-                leftDockDot.className = "w-2.5 h-2.5 rounded-full bg-slate-600";
-                leftDockLabel.className = "text-[10px] text-slate-400 uppercase font-bold";
-                leftDockLabel.innerText = "Destination Bank";
+                boatContainer.style.left = `calc(100% - ${boatOffset}px)`;
 
-                rightDockDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
-                rightDockLabel.className = "text-[10px] text-amber-300 uppercase font-bold";
-                rightDockLabel.innerText = "Start Bank (Docked)";
+                leftDockDot.className = "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-600";
+                leftDockLabel.className = "text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold truncate";
+                leftDockLabel.innerText = "Dest";
+
+                rightDockDot.className = "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 animate-ping";
+                rightDockLabel.className = "text-[8px] sm:text-[10px] text-amber-300 uppercase font-bold truncate";
+                rightDockLabel.innerText = "Start (Docked)";
 
                 mooringRopeLeft.classList.add('hidden');
                 mooringRopeRight.classList.remove('hidden');
@@ -757,24 +794,21 @@
                 goBtnText.innerText = "CROSS LEFT";
             }
 
-            // Update Dock Selectors
             updateDockSelectors();
 
-            // Move Counter
             moveCounterText.innerText = `Moves: ${state.moves}`;
 
-            // Status bar & disembark button state
             const cargo = getItemInBoat();
             if (cargo) {
-                boatStatusText.innerText = `Boat Loaded (${state.boatSide.toUpperCase()})`;
-                boatCargoText.innerText = `Carrying: ${cargo.toUpperCase()}`;
+                boatStatusText.innerText = `Loaded (${state.boatSide.toUpperCase()})`;
+                boatCargoText.innerText = `Cargo: ${cargo.toUpperCase()}`;
                 disembarkBtn.disabled = false;
-                disembarkBtnText.innerText = `Unload ${cargo.toUpperCase()} to ${state.boatSide.toUpperCase()} Bank`;
+                disembarkBtnText.innerText = `Unload ${cargo.toUpperCase()}`;
             } else {
-                boatStatusText.innerText = `Boat Moored (${state.boatSide.toUpperCase()})`;
-                boatCargoText.innerText = `Carrying: Farmer only`;
+                boatStatusText.innerText = `Moored (${state.boatSide.toUpperCase()})`;
+                boatCargoText.innerText = `Farmer only`;
                 disembarkBtn.disabled = true;
-                disembarkBtnText.innerText = `Disembark Cargo`;
+                disembarkBtnText.innerText = `Disembark`;
             }
 
             goBtn.disabled = state.isAnimating || state.isGameOver;
